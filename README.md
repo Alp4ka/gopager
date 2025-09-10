@@ -2,6 +2,15 @@
 A cursor-based pagination library for Go applications using GORM. 
 GoPager provides efficient pagination for large datasets without the performance issues of traditional offset-based pagination.
 
+[![tag](https://img.shields.io/github/tag/samber/lo.svg)](https://github.com/samber/lo/releases)
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.18-%23007d9c)
+[![GoDoc](https://godoc.org/github.com/samber/lo?status.svg)](https://pkg.go.dev/github.com/samber/lo)
+![Build Status](https://github.com/samber/lo/actions/workflows/test.yml/badge.svg)
+[![Go report](https://goreportcard.com/badge/github.com/samber/lo)](https://goreportcard.com/report/github.com/samber/lo)
+[![Coverage](https://img.shields.io/codecov/c/github/samber/lo)](https://codecov.io/gh/samber/lo)
+[![Contributors](https://img.shields.io/github/contributors/samber/lo)](https://github.com/samber/lo/graphs/contributors)
+[![License](https://img.shields.io/github/license/samber/lo)](./LICENSE)
+
 ## Features
 - Efficient pagination for large datasets;
 - DefaultCursor for complex filtering and PseudoCursor for simple offset-based pagination;
@@ -208,15 +217,8 @@ func GetUsersHandler(db *gorm.DB) http.HandlerFunc {
 ### Core Types
 #### CursorPager
 The main pagination structure that handles cursor-based pagination.
-```go
-type CursorPager[CursorType Cursor] struct {
-    // ... internal fields
-}
-```
-
 #### DefaultCursor
 A cursor that uses complex filtering conditions for precise pagination.
-
 #### PseudoCursor
 A simple cursor that uses OFFSET for pagination.
 
@@ -273,7 +275,4 @@ pager := gopager.NewCursorPager[*gopager.DefaultCursor]().
 1. **Use DefaultCursor for large datasets** - More efficient than offset-based pagination
 2. **Use PseudoCursor for simple cases** - When you need simple offset-based pagination
 3. **Always include a unique column in sorting** - Required for consistent pagination
-5. **Set appropriate limits** - Avoid unlimited queries in production
-
-## License
-MIT License - see [LICENSE](LICENSE) file for details.
+4. **Set appropriate limits** - Avoid unlimited queries in production
