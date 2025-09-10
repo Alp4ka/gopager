@@ -1,4 +1,4 @@
-package pager
+package gopager
 
 func levenshtein(s1, s2 []rune) int {
 	s1len := len(s1)

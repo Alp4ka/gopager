@@ -1,4 +1,4 @@
-package pager
+package gopager
 
 import (
 	"encoding/base64"

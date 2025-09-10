@@ -1,4 +1,4 @@
-module pager
+module github.com/Alp4ka/gopager
 
 go 1.24
 
