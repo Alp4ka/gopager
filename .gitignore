@@ -1,0 +1,8 @@
+build/
+.run/
+.idea/
+.editorconfig
+.vscod
+.env
+data
+logs
