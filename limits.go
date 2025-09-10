@@ -1,10 +1,9 @@
 package gopager
 
 const (
-	NoLimit       = -1
-	MaxLimit      = 100
-	DefaultLimit  = 10
-	UnlimitedSize = 10000
+	NoLimit      = -1
+	MaxLimit     = 100
+	DefaultLimit = 10
 )
 
 func IsNormalizedLimitMax(limit int, maxLimit int) (int, bool) {
@@ -24,11 +23,4 @@ func NormalizeLimitMax(limit int, maxLimit int) int {
 
 func NormalizeLimit(limit int) int {
 	return NormalizeLimitMax(limit, MaxLimit)
-}
-
-func NormalizeLimitExt(limit int, isUnlimited bool) int {
-	if isUnlimited {
-		return UnlimitedSize
-	}
-	return NormalizeLimit(limit)
 }
