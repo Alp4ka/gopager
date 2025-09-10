@@ -1,10 +1,8 @@
 # GoPager - Cursor-Based Pagination for Go
-
 A cursor-based pagination library for Go applications using GORM. 
 GoPager provides efficient pagination for large datasets without the performance issues of traditional offset-based pagination.
 
 ## Features
-
 - Efficient pagination for large datasets;
 - DefaultCursor for complex filtering and PseudoCursor for simple offset-based pagination;
 - Seamless integration with GORM ORM;
@@ -13,15 +11,12 @@ GoPager provides efficient pagination for large datasets without the performance
 - Base64 encoded cursors.
 
 ## Installation
-
 ```bash
 go get github.com/Alp4ka/gopager@latest
 ```
 
 ## Quick Start
-
 ### Basic Usage with DefaultCursor
-
 ```go
 package main
 
@@ -81,7 +76,6 @@ func main() {
 ```
 
 ### Using PseudoCursor for Simple Pagination
-
 ```go
 package main
 
@@ -127,7 +121,6 @@ func main() {
 ```
 
 ### HTTP API Integration
-
 ```go
 package main
 
@@ -212,12 +205,9 @@ func GetUsersHandler(db *gorm.DB) http.HandlerFunc {
 ```
 
 ## API Reference
-
 ### Core Types
-
 #### CursorPager
 The main pagination structure that handles cursor-based pagination.
-
 ```go
 type CursorPager[CursorType Cursor] struct {
     // ... internal fields
@@ -227,25 +217,11 @@ type CursorPager[CursorType Cursor] struct {
 #### DefaultCursor
 A cursor that uses complex filtering conditions for precise pagination.
 
-```go
-type DefaultCursor struct {
-    elements []CursorElement
-}
-```
-
 #### PseudoCursor
 A simple cursor that uses OFFSET for pagination.
 
-```go
-type PseudoCursor struct {
-    offset int
-}
-```
-
 ### Main Functions
-
 #### Creating Pagers
-
 ```go
 // Create a new cursor pager
 func NewCursorPager[CursorType Cursor]() *CursorPager[CursorType]
@@ -256,7 +232,6 @@ func DecodePseudoCursorPager(limit int, rawStartToken string, orderBy ...OrderBy
 ```
 
 #### Pager Configuration
-
 ```go
 // Set the limit for results
 func (c *CursorPager[CursorType]) WithLimit(limit int) *CursorPager[CursorType]
@@ -274,60 +249,7 @@ func (c *CursorPager[CursorType]) WithSort(orderBy ...OrderBy) *CursorPager[Curs
 func (c *CursorPager[CursorType]) WithSubstitutedSort(orderBy ...OrderBy) *CursorPager[CursorType]
 ```
 
-#### Applying Pagination
-
-```go
-// Apply pagination to a GORM query
-func (c *CursorPager[CursorType]) Paginate(db *gorm.DB) (*gorm.DB, error)
-```
-
-#### Generating Next Page Cursors
-
-```go
-// Generate next page cursor for DefaultCursor
-func NextPageCursor[T any](
-    initialPager *CursorPager[*DefaultCursor],
-    resultSet []T,
-    getters Getters[T],
-) ([]T, *DefaultCursor, error)
-
-// Generate next page cursor for PseudoCursor
-func NextPagePseudoCursor[T any](
-    initialPager *CursorPager[*PseudoCursor],
-    resultSet []T,
-) ([]T, *PseudoCursor, error)
-```
-
-#### Utility Functions
-
-```go
-// Check if current page is the last page
-func IsLastPage[CursorType Cursor](pager *CursorPager[CursorType], resultSet []T) bool
-
-// Trim result set if lookahead was used
-func TrimResultSet[CursorType Cursor](pager *CursorPager[CursorType], resultSet []T) []T
-```
-
-### Constants
-
-```go
-const (
-    NoLimit       = -1    // Unlimited results
-    MaxLimit      = 100   // Maximum default limit
-    DefaultLimit  = 10    // Default page size
-    UnlimitedSize = 10000 // Size for unlimited queries
-)
-
-const (
-    DirectionASC  Direction = "ASC"
-    DirectionDESC Direction = "DESC"
-)
-```
-
-## Advanced Usage
-
 ### Custom Column Mapping
-
 ```go
 // Map external column names to internal database columns
 columnMapping := gopager.ColumnMapping{
@@ -347,38 +269,11 @@ pager := gopager.NewCursorPager[*gopager.DefaultCursor]().
     WithSort(orderings...)
 ```
 
-### Error Handling
-
-```go
-pager, err := gopager.DecodeCursorPager(limit, startToken, orderBy...)
-if err != nil {
-    switch {
-    case strings.Contains(err.Error(), "failed to decode base64"):
-        // Handle invalid cursor token
-    case strings.Contains(err.Error(), "cursor column number mismatch"):
-        // Handle cursor/ordering mismatch
-    case strings.Contains(err.Error(), "invalid cursor operator"):
-        // Handle invalid operator in cursor
-    default:
-        // Handle other errors
-    }
-}
-```
-
 ## Performance Considerations
-
 1. **Use DefaultCursor for large datasets** - More efficient than offset-based pagination
 2. **Use PseudoCursor for simple cases** - When you need simple offset-based pagination
 3. **Always include a unique column in sorting** - Required for consistent pagination
-4. **Use lookahead sparingly** - Adds one extra query to detect if there are more pages
 5. **Set appropriate limits** - Avoid unlimited queries in production
 
-## Dependencies
-
-- Go 1.24+
-- GORM v1.25.5+
-- github.com/samber/lo v1.51.0+
-
 ## License
-
 MIT License - see [LICENSE](LICENSE) file for details.
