@@ -46,7 +46,7 @@ type (
 	ColumnMapping = map[ColumnAlias]string
 )
 
-var _availableColumnNameSymbols = append([]rune("_"), lo.AlphanumericCharset...)
+var _availableColumnNameSymbols = append([]rune("_.'`\""), lo.AlphanumericCharset...)
 
 func (o OrderBy) validate() error {
 	if !o.Direction.Valid() {

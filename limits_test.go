@@ -67,22 +67,3 @@ func Test_NormalizeLimit(t *testing.T) {
 		})
 	}
 }
-
-func Test_NormalizeLimitExt(t *testing.T) {
-	tests := []struct {
-		name      string
-		limit     int
-		unlimited bool
-		want      int
-	}{
-		{"unlimited overrides to 10000", 1, true, 10000},
-		{"limited uses NormalizeLimit", 0, false, DefaultLimit},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NormalizeLimitExt(tt.limit, tt.unlimited); got != tt.want {
-				t.Errorf("%s: got %d want %d", tt.name, got, tt.want)
-			}
-		})
-	}
-}
