@@ -23,6 +23,7 @@ go get github.com/Alp4ka/gopager@latest
 ```
 
 ## Quick Start
+### [Examples](examples)
 ### Basic Usage with DefaultCursor
 ```go
 package main
@@ -43,6 +44,7 @@ type User struct {
 }
 
 func main() {
+	...
     // Create a new cursor pager
     pager := gopager.NewCursorPager[*gopager.DefaultCursor]().
         WithLimit(10).
@@ -82,174 +84,47 @@ func main() {
 }
 ```
 
-### Using PseudoCursor for Simple Pagination
-```go
-package main
 
-import (
-    "fmt"
-    "log"
-    
-    "github.com/Alp4ka/gopager"
-    "gorm.io/gorm"
-)
 
-func main() {
-    // Create a pseudo cursor pager (uses OFFSET/LIMIT)
-    pager := gopager.NewCursorPager[*gopager.PseudoCursor]().
-        WithLimit(10).
-        WithSort(
-            gopager.OrderBy{Column: "id", Direction: gopager.DirectionASC},
-        )
-    
-    // Apply pagination
-    var users []User
-    db, err := pager.Paginate(db.Model(&User{}))
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    result := db.Find(&users)
-    if result.Error != nil {
-        log.Fatal(result.Error)
-    }
-    
-    // Generate next page pseudo cursor
-    trimmedUsers, nextCursor, err := gopager.NextPagePseudoCursor(pager, users)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("Found %d users\n", len(trimmedUsers))
-    if nextCursor != nil {
-        fmt.Printf("Next page token: %s\n", nextCursor.String())
-    }
-}
-```
 
-### HTTP API Integration
-```go
-package main
+## Core Types
+### CursorPager
+The main structure for handling cursor-based pagination. 
+Create a new instance with `NewCursorPager` or decode an existing one from a string using 
+`DecodeCursorPager` or `DecodePseudoCursorPager`.
+#### WithLimit(limit int)
+Set the select-request fetch limit.
+#### WithUnlimited()
+Enable unlimited select (cannot be used with lookahead option).
+#### WithLookahead()
+Enable lookahead to detect if there are more pages. 
+If the page is the last one in the dataset, the next token will be nil.
+#### WithSort(orderBy ...OrderBy)
+Set sorting order. MUST include a column with a unique constraint.
+#### WithSubstitutedSort(orderBy ...OrderBy)
+This function works the same as `CursorPager.WithSort`, 
+but it clears all existing sorts and replaces them with the new ones.
+#### Paginate(db *gorm.DB)
+Applies pagination to the select statement.
 
-import (
-    "encoding/json"
-    "net/http"
-    
-    "github.com/Alp4ka/gopager"
-    "gorm.io/gorm"
-)
+### DefaultCursor
+A cursor that uses complex filtering conditions for precise pagination. 
+It relies on the values of a specific field from the last element of the previous page. 
+For example, given the unique sorted dataset `[1, 2, 3, 4]` and a previous page of `[1, 2]`, 
+the next page would start from the first element satisfying the condition `x > 2`. 
+This approach is significantly faster than using `LIMIT/OFFSET` on large datasets. 
 
-type PaginationRequest struct {
-    gopager.RawCursorPager `json:",inline"`
-}
+This cursor type requires:
+1. Sorted dataset;
+2. At least one unique element is required for correct filtering.
 
-type PaginationResponse[T any] struct {
-    Items         []T                        `json:"items"`
-    NextPageToken *gopager.DefaultCursor     `json:"nextPageToken,omitempty"`
-    HasMore       bool                       `json:"hasMore"`
-}
+### PseudoCursor
+A simple cursor that uses `LIMIT/OFFSET` for pagination. It's less efficient on big datasets.
 
-func GetUsersHandler(db *gorm.DB) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        var req PaginationRequest
-        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, "Invalid request", http.StatusBadRequest)
-            return
-        }
-        
-        // Decode the cursor pager
-        pager, err := req.Decode(
-            gopager.OrderBy{Column: "id", Direction: gopager.DirectionASC},
-        )
-        if err != nil {
-            http.Error(w, "Invalid pagination parameters", http.StatusBadRequest)
-            return
-        }
-        
-        // Apply pagination with lookahead to detect if there are more pages
-        pager = pager.WithLookahead()
-        
-        var users []User
-        db, err := pager.Paginate(db.Model(&User{}))
-        if err != nil {
-            http.Error(w, "Database error", http.StatusInternalServerError)
-            return
-        }
-        
-        result := db.Find(&users)
-        if result.Error != nil {
-            http.Error(w, "Query error", http.StatusInternalServerError)
-            return
-        }
-        
-        // Check if this is the last page
-        isLastPage := gopager.IsLastPage(pager, users)
-        trimmedUsers := gopager.TrimResultSet(pager, users)
-        
-        // Generate next page cursor if not last page
-        var nextCursor *gopager.DefaultCursor
-        if !isLastPage {
-            getters := gopager.Getters[User]{
-                "id": func(u User) any { return u.ID },
-            }
-            _, nextCursor, err = gopager.NextPageCursor(pager, trimmedUsers, getters)
-            if err != nil {
-                http.Error(w, "Cursor generation error", http.StatusInternalServerError)
-                return
-            }
-        }
-        
-        response := PaginationResponse[User]{
-            Items:         trimmedUsers,
-            NextPageToken: nextCursor,
-            HasMore:       nextCursor != nil,
-        }
-        
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(response)
-    }
-}
-```
-
-## API Reference
-### Core Types
-#### CursorPager
-The main pagination structure that handles cursor-based pagination.
-#### DefaultCursor
-A cursor that uses complex filtering conditions for precise pagination.
-#### PseudoCursor
-A simple cursor that uses OFFSET for pagination.
-
-### Main Functions
-#### Creating Pagers
-```go
-// Create a new cursor pager
-func NewCursorPager[CursorType Cursor]() *CursorPager[CursorType]
-
-// Decode from raw pagination request
-func DecodeCursorPager(limit int, rawStartToken string, orderBy ...OrderBy) (*CursorPager[*DefaultCursor], error)
-func DecodePseudoCursorPager(limit int, rawStartToken string, orderBy ...OrderBy) (*CursorPager[*PseudoCursor], error)
-```
-
-#### Pager Configuration
-```go
-// Set the limit for results
-func (c *CursorPager[CursorType]) WithLimit(limit int) *CursorPager[CursorType]
-
-// Enable unlimited results (cannot be used with lookahead)
-func (c *CursorPager[CursorType]) WithUnlimited() *CursorPager[CursorType]
-
-// Enable lookahead to detect if there are more pages
-func (c *CursorPager[CursorType]) WithLookahead() *CursorPager[CursorType]
-
-// Set sorting order
-func (c *CursorPager[CursorType]) WithSort(orderBy ...OrderBy) *CursorPager[CursorType]
-
-// Substitute sorting order (replaces existing)
-func (c *CursorPager[CursorType]) WithSubstitutedSort(orderBy ...OrderBy) *CursorPager[CursorType]
-```
-
-### Custom Column Mapping
+### ParseSort
+Converts a list of strings to the list of sorts. 
+It is considered that each string is given in the next format: `<column_alias> <ASC/DESC/asc/desc>`.
+You should pass `ColumnMapping` as an argument in order to convert `column_alias` to a real column name inside the dataset.
 ```go
 // Map external column names to internal database columns
 columnMapping := gopager.ColumnMapping{
@@ -268,9 +143,3 @@ if err != nil {
 pager := gopager.NewCursorPager[*gopager.DefaultCursor]().
     WithSort(orderings...)
 ```
-
-## Performance Considerations
-1. **Use DefaultCursor for large datasets** - More efficient than offset-based pagination
-2. **Use PseudoCursor for simple cases** - When you need simple offset-based pagination
-3. **Always include a unique column in sorting** - Required for consistent pagination
-4. **Set appropriate limits** - Avoid unlimited queries in production
