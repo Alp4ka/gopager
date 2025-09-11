@@ -7,6 +7,7 @@ GoPager provides efficient pagination for large datasets without the performance
 ![Build Status](https://github.com/Alp4ka/gopager/actions/workflows/test.yml/badge.svg)
 [![Go report](https://goreportcard.com/badge/github.com/Alp4ka/gopager)](https://goreportcard.com/report/github.com/Alp4ka/gopager)
 [![Coverage](https://img.shields.io/codecov/c/github/Alp4ka/gopager)](https://codecov.io/gh/Alp4ka/gopager)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/Alp4ka/gopager)](https://pkg.go.dev/github.com/Alp4ka/gopager)
 [![License](https://img.shields.io/github/license/Alp4ka/gopager)](./LICENSE)
 
 ## Features

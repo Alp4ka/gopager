@@ -139,3 +139,4 @@ Error response format:
 - **Lookahead**: Uses lookahead to detect if there are more pages
 - **Error Handling**: Comprehensive error handling with proper HTTP status codes
 - **Flexibility**: Supports both query parameters and JSON body requests
+

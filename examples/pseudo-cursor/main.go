@@ -233,3 +233,4 @@ func seedData(db *gorm.DB) {
 		db.Create(&product)
 	}
 }
+

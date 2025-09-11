@@ -10,13 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// DefaultCursor представляет токен пагинации, определяющий начальную позицию
-// для запрашиваемой страницы данных. Пустой токен означает начало набора данных.
+// DefaultCursor represents a pagination token that defines the starting
+// position for the requested page. An empty token means the beginning of the dataset.
 //
 // IMPORTANT:
-// Токен ВСЕГДА должен содержать условие по уникальной колонке!
+// The token MUST always include a condition on a unique column!
 //
-// Токен состоит из набора условий следующего вида:
+// The token consists of a set of conditions of the form:
 //
 //	[(C1, O1, V1), (C2, O2, V2)... (Cn, On, Vn)]
 type DefaultCursor struct {
@@ -33,7 +33,7 @@ func NewDefaultCursor(elements ...CursorElement) *DefaultCursor {
 	}
 }
 
-// DecodeCursor производит попытку распарсить закодированную (base64) строку в *DefaultCursor.
+// DecodeCursor attempts to parse a base64-encoded string into *DefaultCursor.
 func DecodeCursor(b64String string) (*DefaultCursor, error) {
 	if len(b64String) == 0 {
 		return nil, nil
@@ -78,11 +78,13 @@ func (c *DefaultCursor) IsEmpty() bool {
 	return c == nil || len(c.elements) == 0
 }
 
-// GetElements - возвращает элементы токена. Элементы токена представляют собой сжатый набор условий для фильтрации.
+// GetElements returns token elements. Cursor elements are a compressed set
+// of filter conditions.
 //
 // IMPORTANT:
-// Эти условия фильтрации нельзя применять к данным напрямую, т.к они не являются полными.
-// В процессе пагинации они разжимаются в полный набор условий фильтрации.
+// These filter conditions must NOT be applied directly to data, as they are
+// not complete. During pagination they are inflated into a full set of
+// filtering conditions.
 func (c *DefaultCursor) GetElements() []CursorElement {
 	if c == nil {
 		return nil
@@ -91,7 +93,7 @@ func (c *DefaultCursor) GetElements() []CursorElement {
 	return c.elements
 }
 
-// WithElements - указать элементы токена вручную.
+// WithElements explicitly sets the token elements.
 func (c *DefaultCursor) WithElements(elements []CursorElement) *DefaultCursor {
 	if c == nil {
 		c = new(DefaultCursor)
@@ -102,7 +104,7 @@ func (c *DefaultCursor) WithElements(elements []CursorElement) *DefaultCursor {
 	return c
 }
 
-// Apply - implements Cursor. Применяет сдвиг на основе фильтров к запросу gorm.
+// Apply - implements Cursor. Applies filter-based offset to the gorm query.
 func (c *DefaultCursor) Apply(db *gorm.DB) *gorm.DB {
 	exp := c.toDNF().toGORMExpression()
 	if exp == nil {
@@ -112,9 +114,9 @@ func (c *DefaultCursor) Apply(db *gorm.DB) *gorm.DB {
 	return db.Clauses(exp)
 }
 
-// ToSQL - implements Cursor. Вернет строковое представление фильтра в виде SQL выражения.
+// ToSQL - implements Cursor. Returns the SQL expression representing the filter.
 //
-// Использование:
+// Usage:
 //
 //	query := fmt.Sprintf("SELECT * FROM table WHERE %s", p.ToSQL())
 func (c *DefaultCursor) ToSQL() (string, []driver.Value) {
@@ -125,21 +127,21 @@ func (c *DefaultCursor) ToSQL() (string, []driver.Value) {
 	return c.toDNF().toSQLClause()
 }
 
-// toDNF - преобразует DefaultCursor в tDNF.
+// toDNF converts DefaultCursor to tDNF.
 //
 // IMPORTANT:
-// Токен ВСЕГДА должен содержать условие по уникальной колонке!
+// The token MUST always include a condition on a unique column!
 //
-// Токен состоит из набора условий следующего вида:
+// The token consists of a set of conditions of the form:
 //
 //	[(C1, O1, V1), (C2, O2, V2)... (Cn, On, Vn)]
 //
-// Последовательно применяя к этому набору условий преобразования(Inflate), получаем фильтр:
+// Applying sequential Inflate transformations to this set, we get the filter:
 //
 //	(C1 O1 V1) or (C1 = V1 and C2 O2 V2)
 //
-// В таком виде, токен представляет собой ДНФ, достаточный для фильтрации.
-// Это позволяет однозначно определить позицию, с которой следует продолжить выборку данных.
+// In this form the token represents a DNF sufficient for filtering. This allows
+// us to unambiguously determine the position from which to continue fetching data.
 func (c *DefaultCursor) toDNF() tDNF {
 	if c.IsEmpty() {
 		return nil
@@ -167,22 +169,22 @@ func (c *DefaultCursor) validate(orderings Orderings) error {
 		return nil
 	}
 
-	// Не допускаем расхождений между количеством колонок в токене и в списке сортировки.
+	// Do not allow mismatch between number of cursor columns and ordering list.
 	if len(c.elements) != len(orderings) && len(c.elements) != 0 {
 		return fmt.Errorf("cursor column number mismatch")
 	}
 
-	// Проверка соответствия сортировки и фильтров. Допускается пустой список элементов.
+	// Validate consistency of ordering and filters. Empty element list is allowed.
 	for i := range c.elements {
 		cond := c.elements[i]
 		orderBy := orderings[i]
 
-		// Проверяем совпадение имен колонок.
+		// Verify column names match.
 		if cond.Column != orderBy.Column {
 			return fmt.Errorf("unexpected cursor column '%s'", cond.Column)
 		}
 
-		// Проверяем допустимость оператора.
+		// Verify operator is acceptable and corresponds to ordering.
 		if !cond.Operator.Valid() {
 			return fmt.Errorf("invalid cursor operator '%s'", cond.Operator)
 		} else if cond.Operator.ForOrdering() != orderBy.Direction {
@@ -198,8 +200,8 @@ var (
 	_ fmt.Stringer = (*DefaultCursor)(nil)
 )
 
-// Getters - словарь геттеров для объекта. Указывать те колонки, на основе которых производится пагинация.
-// Пример:
+// Getters is a map of getters for a type. Specify the columns used for pagination.
+// Example:
 //
 //	pager.Getters[models.PlayerPushTarget]{
 //		"id":          func(last models.PlayerPushTarget) any { return last.ID },
@@ -207,7 +209,7 @@ var (
 //	}
 type Getters[T any] map[string]func(T) any
 
-// NextPageCursor - получить курсор для следующей страницы датасета.
+// NextPageCursor builds a cursor for the next page of the dataset.
 func NextPageCursor[T any](
 	initialPager *CursorPager[*DefaultCursor],
 	resultSet []T,
@@ -242,11 +244,11 @@ func NextPageCursor[T any](
 	return resultSet, &ret, nil
 }
 
-// CursorElement представляет тройку значений вида (c v o), где:
+// CursorElement represents a triplet (c v o), where:
 //
-//   - "c" - поле объекта.
-//   - "v" - значение, с которым сравниваем поле объекта.
-//   - "o" - оператор, который применяем к паре (c, v);
+//   - c: an object's field (column)
+//   - v: the value compared against the field
+//   - o: the operator applied to the pair (c, v)
 type CursorElement struct {
 	Column   string   `json:"c"`
 	Value    any      `json:"v"`

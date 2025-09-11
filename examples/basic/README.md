@@ -30,3 +30,4 @@ go run main.go
 - **Getters**: Functions that extract values from your structs for cursor generation
 - **Lookahead**: Fetches one extra record to determine if there are more pages
 - **Multi-column Sorting**: Supports sorting by multiple columns with different directions
+

@@ -8,27 +8,29 @@ import (
 	"gorm.io/gorm"
 )
 
-// RawCursorPager - структура для слоя представления данных. Для корректной кодогенерации использовать инлайнинг:
+// RawCursorPager is intended for API payloads. For proper code generation, inline it:
 //
 //	type MyFilter struct {
 //	    Paging RawCursorPager `json:",inline"`
 //	}
 type RawCursorPager struct {
-	// Limit - максимальное количество записей в ответе на запрос.
+	// Limit - maximum number of records to return in the response.
 	Limit int `json:"limit"`
-	// StartToken - строка с закодированным токеном курсора. Получается путем вызова Cursor.String().
-	// Если передать пустое значение - в ответе на запрос вернется первая страница с указанным Limit записей.
+	// StartToken - base64-encoded cursor token obtained via Cursor.String().
+	// If empty, the first page with Limit records is returned.
 	StartToken string `json:"startToken"`
 }
 
-// Decode переводит RawCursorPager в *CursorPager[*DefaultCursor], нормализуя Limit и валидируя StartToken.
-// Возвращает *CursorPager[*DefaultCursor] с примененным *CursorPager.WithSort
+// Decode converts RawCursorPager into *CursorPager[*DefaultCursor], normalizing
+// Limit and validating StartToken. Returns *CursorPager[*DefaultCursor] with
+// WithSort applied.
 func (p RawCursorPager) Decode(orderBy ...OrderBy) (*CursorPager[*DefaultCursor], error) {
 	return DecodeCursorPager(p.Limit, p.StartToken, orderBy...)
 }
 
-// DecodePseudo переводит RawCursorPager в *CursorPager[*PseudoCursor], нормализуя Limit и валидируя StartToken.
-// Возвращает *CursorPager[*PseudoCursor] с примененным *CursorPager.WithSort
+// DecodePseudo converts RawCursorPager into *CursorPager[*PseudoCursor], normalizing
+// Limit and validating StartToken. Returns *CursorPager[*PseudoCursor] with
+// WithSort applied.
 func (p RawCursorPager) DecodePseudo(orderBy ...OrderBy) (*CursorPager[*PseudoCursor], error) {
 	return DecodePseudoCursorPager(p.Limit, p.StartToken, orderBy...)
 }
@@ -44,9 +46,9 @@ func NewCursorPager[CursorType Cursor]() *CursorPager[CursorType] {
 	return new(CursorPager[CursorType])
 }
 
-// DecodeCursorPager - декодирует токен курсора в *CursorPager.
+// DecodeCursorPager decodes a cursor token into *CursorPager.
 //
-// Руководство по использованию: https://doc.office.lan/spaces/MBCSHCH/pages/417057947
+// Usage guide: https://doc.office.lan/spaces/MBCSHCH/pages/417057947
 func DecodeCursorPager(limit int, rawStartToken string, orderBy ...OrderBy) (*CursorPager[*DefaultCursor], error) {
 	cursor, err := DecodeCursor(rawStartToken)
 	if err != nil {
@@ -58,9 +60,9 @@ func DecodeCursorPager(limit int, rawStartToken string, orderBy ...OrderBy) (*Cu
 	}).WithSubstitutedSort(orderBy...).WithLimit(limit), nil
 }
 
-// DecodePseudoCursorPager - декодирует токен псевдо-курсора в *CursorPager.
+// DecodePseudoCursorPager decodes a pseudo-cursor token into *CursorPager.
 //
-// Руководство по использованию: https://doc.office.lan/spaces/MBCSHCH/pages/417057947
+// Usage guide: https://doc.office.lan/spaces/MBCSHCH/pages/417057947
 func DecodePseudoCursorPager(limit int, rawStartToken string, orderBy ...OrderBy) (*CursorPager[*PseudoCursor], error) {
 	cursor, err := DecodePseudoCursor(rawStartToken)
 	if err != nil {
@@ -72,11 +74,11 @@ func DecodePseudoCursorPager(limit int, rawStartToken string, orderBy ...OrderBy
 	}).WithSubstitutedSort(orderBy...).WithLimit(limit), nil
 }
 
-// WithLookahead использует пагинацию с 'заглядыванием' на следующую страницу.
-// Lookahead позволяет определить, является ли текущая страница последней.
+// WithLookahead enables lookahead pagination, which checks the next page to
+// determine whether the current page is the last.
 //
 // IMPORTANT:
-// Нельзя применить WithLookahead к CursorPager с WithUnlimited() или WithLimit(NoLimit).
+// Cannot be used together with WithUnlimited() or WithLimit(NoLimit).
 func (c *CursorPager[CursorType]) WithLookahead() *CursorPager[CursorType] {
 	if c == nil {
 		c = new(CursorPager[CursorType])
@@ -87,10 +89,10 @@ func (c *CursorPager[CursorType]) WithLookahead() *CursorPager[CursorType] {
 	return c
 }
 
-// WithUnlimited позволяет возвращать все записи, неограниченное количество.
+// WithUnlimited allows returning all records without a limit.
 //
 // IMPORTANT:
-// Нельзя применить WithUnlimited к CursorPager с WithLookahead.
+// Cannot be used together with WithLookahead.
 func (c *CursorPager[CursorType]) WithUnlimited() *CursorPager[CursorType] {
 	if c == nil {
 		c = new(CursorPager[CursorType])
@@ -101,11 +103,11 @@ func (c *CursorPager[CursorType]) WithUnlimited() *CursorPager[CursorType] {
 	return c
 }
 
-// WithLimit позволяет задать лимит возвращаемых записей.
+// WithLimit sets the maximum number of returned records.
 //
 // IMPORTANT:
-//   - Нельзя применить NoLimit к CursorPager с WithLookahead.
-//   - Если указанный лимит не равен NoLimit, то к нему будет применена функция NormalizeLimit.
+//   - NoLimit cannot be used together with WithLookahead.
+//   - If the limit is not NoLimit, NormalizeLimit will be applied.
 func (c *CursorPager[CursorType]) WithLimit(limit int) *CursorPager[CursorType] {
 	if c == nil {
 		c = new(CursorPager[CursorType])
@@ -119,7 +121,7 @@ func (c *CursorPager[CursorType]) WithLimit(limit int) *CursorPager[CursorType] 
 	return c
 }
 
-// WithCursor позволяет вручную задать курсор для пагинации.
+// WithCursor sets the cursor explicitly.
 func (c *CursorPager[CursorType]) WithCursor(cursor CursorType) *CursorPager[CursorType] {
 	if c == nil {
 		c = new(CursorPager[CursorType])
@@ -130,7 +132,7 @@ func (c *CursorPager[CursorType]) WithCursor(cursor CursorType) *CursorPager[Cur
 	return c
 }
 
-// WithSubstitutedSort вызывает WithSort, замещая при этом прежние сортировки.
+// WithSubstitutedSort resets previous orderings and applies the provided ones.
 func (c *CursorPager[CursorType]) WithSubstitutedSort(orderBy ...OrderBy) *CursorPager[CursorType] {
 	if c == nil {
 		c = new(CursorPager[CursorType])
@@ -141,8 +143,8 @@ func (c *CursorPager[CursorType]) WithSubstitutedSort(orderBy ...OrderBy) *Curso
 	return c.WithSort(orderBy...)
 }
 
-// WithSort не затирает сортировки, а добавляет в массив ордеров.
-// Сортировки применяются в порядке добавления, как если бы вызов был в формате:
+// WithSort appends sort orderings without overwriting existing ones.
+// Order is preserved as if calling:
 //
 //	OrderBy(o1).ThenBy(o2).ThenBy(o3)...
 func (c *CursorPager[CursorType]) WithSort(orderBy ...OrderBy) *CursorPager[CursorType] {
@@ -155,7 +157,7 @@ func (c *CursorPager[CursorType]) WithSort(orderBy ...OrderBy) *CursorPager[Curs
 			return processed.Column == o.Column
 		})
 
-		// Удалить прошлое вхождение (защита от дублирования).
+		// Remove previous occurrence (avoid duplication).
 		if idx != -1 {
 			c.sort = slices.Delete(c.sort, idx, idx+1)
 		}
@@ -166,7 +168,8 @@ func (c *CursorPager[CursorType]) WithSort(orderBy ...OrderBy) *CursorPager[Curs
 	return c
 }
 
-// Paginate - применяет пагинацию к датасету. Вернет ошибку, если пагинация не может быть применена.
+// Paginate applies pagination to the dataset. Returns an error if pagination
+// cannot be applied.
 func (c *CursorPager[CursorType]) Paginate(db *gorm.DB) (*gorm.DB, error) {
 	if c == nil {
 		c = new(CursorPager[CursorType])
@@ -180,8 +183,8 @@ func (c *CursorPager[CursorType]) Paginate(db *gorm.DB) (*gorm.DB, error) {
 	db = c.sort.Apply(db)
 	db = c.cursor.Apply(db)
 
-	// Применение лимита к датасету. В случае использования Lookahead -
-	// заглядываем на один элемент вперед, чтобы узнать, есть ли элементы дальше.
+	// Apply limit to the dataset. When lookahead is enabled, fetch one extra
+	// record to determine if there is a next page.
 	if c.limit != NoLimit {
 		db = db.Limit(c.GetDatasetLimit())
 	}
@@ -189,7 +192,7 @@ func (c *CursorPager[CursorType]) Paginate(db *gorm.DB) (*gorm.DB, error) {
 	return db, nil
 }
 
-// GetSort - возвращает список сортировок, которые быдут применены к датасету.
+// GetSort returns orderings that will be applied to the dataset.
 func (c *CursorPager[CursorType]) GetSort() Orderings {
 	if c == nil {
 		return nil
@@ -198,7 +201,7 @@ func (c *CursorPager[CursorType]) GetSort() Orderings {
 	return c.sort
 }
 
-// IsUnlimited - возвращает true, если лимит равен NoLimit (неограниченное количество записей).
+// IsUnlimited returns true if the limit equals NoLimit (unbounded number of records).
 func (c *CursorPager[CursorType]) IsUnlimited() bool {
 	if c == nil {
 		return false
@@ -207,7 +210,7 @@ func (c *CursorPager[CursorType]) IsUnlimited() bool {
 	return c.limit == NoLimit
 }
 
-// IsLookahead - возвращает true, если применена пагинация с 'заглядыванием' на следующую страницу.
+// IsLookahead returns true if lookahead pagination is enabled.
 func (c *CursorPager[CursorType]) IsLookahead() bool {
 	if c == nil {
 		return false
@@ -216,8 +219,8 @@ func (c *CursorPager[CursorType]) IsLookahead() bool {
 	return c.lookahead
 }
 
-// GetLimit - возвращает указанный в CursorPager лимит без изменений.
-// Возвразаемое значение >= 0. Возврат NoLimit эквивалентен отсутствию лимита.
+// GetLimit returns the limit as it is stored in CursorPager.
+// The return value is >= 0. Returning NoLimit is equivalent to no limit.
 func (c *CursorPager[CursorType]) GetLimit() int {
 	if c == nil {
 		return 0
@@ -226,7 +229,7 @@ func (c *CursorPager[CursorType]) GetLimit() int {
 	return c.limit
 }
 
-// GetCursor - возвращает указанный в CursorPager курсор без изменений.
+// GetCursor returns the cursor stored in CursorPager as-is.
 func (c *CursorPager[CursorType]) GetCursor() CursorType {
 	if c == nil {
 		return lo.Empty[CursorType]()
@@ -235,9 +238,9 @@ func (c *CursorPager[CursorType]) GetCursor() CursorType {
 	return c.cursor
 }
 
-// GetDatasetLimit - возвращает указанный в CursorPager лимит с учетом Lookahead.
-//   - при Lookahead = true - возвращаемое значение будет равно GetLimit() + 1;
-//   - при Lookahead = false - возвращаемое значение будет равно GetLimit().
+// GetDatasetLimit returns the limit adjusted for lookahead:
+//   - if Lookahead = true → GetLimit() + 1
+//   - if Lookahead = false → GetLimit()
 func (c *CursorPager[CursorType]) GetDatasetLimit() int {
 	limit := c.GetLimit()
 	isLookahead := c.IsLookahead()
@@ -262,29 +265,29 @@ func (c *CursorPager[_]) validate() error {
 	return c.cursor.validate(c.sort)
 }
 
-// IsLastPage - возвращает true, если результирующий сет является последней страницей в датасете.
+// IsLastPage returns true if the result set is the last page in the dataset.
 //
-// Для определения последней страницы датасета используется одно из двух условий:
-//  1. В результирующем сете вернулось записей меньше, чем было указано в Limit.
-//  2. Lookahead = true и вернулось записей меньше или равно Limit.
+// The last page is determined by one of two conditions:
+//  1. The number of returned records is less than Limit.
+//  2. Lookahead = true and the number of returned records is less than or equal to Limit.
 //
-// Для таких случаев - необходимо вернуть результирующий сет без изменений с пустым токеном.
-// Так мы обозначим конец датасета для клиента.
+// In these cases, return the result set unchanged with an empty token to
+// signal the end of the dataset to the client.
 func IsLastPage[CursorType Cursor, T any](initialPager *CursorPager[CursorType], resultSet []T) bool {
 	return len(resultSet) < initialPager.limit ||
 		(initialPager.lookahead && len(resultSet) <= initialPager.limit)
 }
 
-// TrimResultSet - обрезает результирующий сет до состояния, возвращаемого клиенту.
+// TrimResultSet trims the result set to what should be returned to the client.
 //
-// Если lookahead = true, то обрезаем последний элемент перед возвратом результата.
-// Предположим, что resultSet = [a, b, c].
+// If lookahead = true, drop the last element before returning. Suppose
+// resultSet = [a, b, c].
 //
-//   - Если lookahead используется, то resultSet станет равен [a, b].
-//   - Если lookahead НЕ используется, то resultSet останется без изменений.
+//   - With lookahead → resultSet becomes [a, b].
+//   - Without lookahead → resultSet remains unchanged.
 //
-// Это необходимо для того, чтобы построить пагинацию на основе СТРОГОГО сравнения с последним элементом
-// результирующего сета.
+// This enables building pagination based on a STRICT comparison with the
+// last element of the result set.
 func TrimResultSet[CursorType Cursor, T any](initialPager *CursorPager[CursorType], resultSet []T) []T {
 	if initialPager.lookahead {
 		resultSet = resultSet[:len(resultSet)-1]

@@ -17,3 +17,4 @@ require (
 )
 
 replace github.com/Alp4ka/gopager => ../../
+

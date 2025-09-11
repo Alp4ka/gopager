@@ -15,14 +15,14 @@ type Cursor interface {
 	validate(orderings Orderings) error
 }
 
-// PaginationResult результат с пагинацией.
+// PaginationResult is a generic paginated result container.
 type PaginationResult[T any, CursorType Cursor] struct {
-	// Items элементы результата.
+	// Items result elements.
 	Items []T
-	// Total общее количество элементов.
+	// Total number of elements.
 	Total int64
-	// AppliedLimit примененный лимит.
+	// AppliedLimit effective limit used for the query.
 	AppliedLimit int
-	// NextPageToken токен для следующей страницы.
+	// NextPageToken token for the next page.
 	NextPageToken CursorType
 }

@@ -64,7 +64,7 @@ func Test_NextPagePseudoCursor(t *testing.T) {
 	}{
 		{
 			name:        "last page without lookahead",
-			description: "Количество элементов в результирующем сете строго меньше лимита. При lookahead = false, это говорит о конце датасета.",
+			description: "The number of items in the result set is strictly less than the limit. With lookahead = false, this indicates the end of the dataset.",
 			pager: func() *CursorPager[*PseudoCursor] {
 				p := &CursorPager[*PseudoCursor]{limit: 3, cursor: &PseudoCursor{offset: 0}}
 				p.WithSort(OrderBy{
@@ -80,7 +80,7 @@ func Test_NextPagePseudoCursor(t *testing.T) {
 		},
 		{
 			name:        "ordinary page without lookahead",
-			description: "Количество элементов в результирующем сете строго равно лимиту. При lookahead = false, это говорит: 1. Либо о том, что это НЕ конец датасета. 2. Либо о том, что в следующей странице будет пустой набор элементов.",
+			description: "The number of items in the result set equals the limit. With lookahead = false, this means either: 1) it is NOT the end of the dataset; or 2) the next page will be empty.",
 			pager: func() *CursorPager[*PseudoCursor] {
 				p := &CursorPager[*PseudoCursor]{limit: 2, cursor: &PseudoCursor{offset: 4}}
 				p.WithSort(OrderBy{
@@ -96,7 +96,7 @@ func Test_NextPagePseudoCursor(t *testing.T) {
 		},
 		{
 			name:        "last page with lookahead",
-			description: "Количество элементов в результирующем сете строго равно лимиту. При lookahead = true, это говорит о конце датасета. Приэтом функция должна вернуть полный набор данных, не обрезая последний элемент.",
+			description: "The number of items in the result set equals the limit. With lookahead = true, this indicates the end of the dataset. The function must return the full set without trimming the last element.",
 			pager: func() *CursorPager[*PseudoCursor] {
 				p := (&CursorPager[*PseudoCursor]{limit: 2, cursor: &PseudoCursor{offset: 2}}).WithLookahead()
 				p.WithSort(OrderBy{
@@ -112,7 +112,7 @@ func Test_NextPagePseudoCursor(t *testing.T) {
 		},
 		{
 			name:        "ordinary page with lookahead",
-			description: "Количество элементов в результирующем сете строго больше лимита. При lookahead = true, это говорит о налчии следующей страницы. Приэтом функция должна обрезать последний элемент, так как он выполняет ТОЛЬКО задачу определения конца датасета.",
+			description: "The number of items in the result set is strictly greater than the limit. With lookahead = true, this indicates there is a next page. The function must trim the last element because it is used ONLY to detect the end of the dataset.",
 			pager: func() *CursorPager[*PseudoCursor] {
 				p := (&CursorPager[*PseudoCursor]{limit: 2, cursor: &PseudoCursor{offset: 2}}).WithLookahead()
 				p.WithSort(OrderBy{
@@ -130,7 +130,7 @@ func Test_NextPagePseudoCursor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Выводим описание теста для лучшего понимания
+			// Print test description for better understanding
 			t.Logf("Test description: %s", tt.description)
 
 			res, cur, err := NextPagePseudoCursor(tt.pager, tt.input)

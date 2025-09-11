@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Direction определяет направление сортировки для запрашиваемого набора данных.
+// Direction defines the sort direction for the requested dataset.
 type Direction string
 
 const (
@@ -41,8 +41,9 @@ type (
 
 	ColumnAlias = string
 
-	// ColumnMapping - для маппинга алиасов колонок. Создан для тех кейсов, когда указание колонки без таблицы вызывает
-	// 'ambiguous column name error'. Ключ - служит внешним отображением колонки, а значение - внутренним.
+	// ColumnMapping maps external column aliases to fully qualified column names.
+	// Use it when bare column names could cause an "ambiguous column name" error.
+	// Key is an external alias, value is an internal column name.
 	ColumnMapping = map[ColumnAlias]string
 )
 
@@ -53,7 +54,7 @@ func (o OrderBy) validate() error {
 		return fmt.Errorf("invalid ordering direction '%s'", o.Direction)
 	}
 
-	// Здесь защищаемся от SQL инъекций.
+	// Guard against SQL injection by restricting allowed characters in column names.
 	if !lo.Every(_availableColumnNameSymbols, []rune(o.Column)) {
 		return fmt.Errorf("ordering column name contains forbidden symbols '%s'", o.Column)
 	}
@@ -61,10 +62,10 @@ func (o OrderBy) validate() error {
 	return nil
 }
 
-// ToSQLSlice конвертирует Orderings в слайс строк "<order_column> <order_direction>" для вставки
-// в билдер SQL запросов.
+// ToSQLSlice converts Orderings to a slice of strings in the form
+// "<order_column> <order_direction>" suitable for SQL query builders.
 //
-// Например, для Orderings: [{"a", "ASC"}, {"b", "DESC"}] вернет слайс строк ["a ASC", "b DESC"].
+// Example: for Orderings: [{"a", "ASC"}, {"b", "DESC"}] returns ["a ASC", "b DESC"].
 func (o Orderings) ToSQLSlice() []string {
 	ret := make([]string, 0, len(o))
 	for _, ordering := range o {
@@ -74,18 +75,19 @@ func (o Orderings) ToSQLSlice() []string {
 	return ret
 }
 
-// ToSQL конвертирует Orderings в строку "<order_column_1> <order_direction_1>, <order_column_2> <order_direction_2>"
-// для вставки в SQL запрос.
-// Например, для [{"a", "ASC"}, {"b", "DESC"}] вернет строку "a ASC, b DESC".
+// ToSQL converts Orderings to a single string
+// "<order_column_1> <order_direction_1>, <order_column_2> <order_direction_2>"
+// suitable for embedding into an SQL query.
+// Example: for [{"a", "ASC"}, {"b", "DESC"}] returns "a ASC, b DESC".
 //
-// Использование:
+// Usage:
 //
 //	query := fmt.Sprintf("SELECT * FROM table ORDER BY %s", orderings.ToSQL())
 func (o Orderings) ToSQL() string {
 	return strings.Join(o.ToSQLSlice(), ", ")
 }
 
-// Apply применяет сортировку к запросу gorm.
+// Apply applies the ordering to a gorm query.
 func (o Orderings) Apply(db *gorm.DB) *gorm.DB {
 	return db.Order(o.ToSQL())
 }
@@ -106,9 +108,9 @@ func (o Orderings) validate() error {
 	return nil
 }
 
-// ParseSort - создает слайс сортировок на основе списка строк формата "column asc|desc".
-// Также передается словарь с маппингами алиасов колонок в реальные колонку таблицы. См. ColumnMapping.
-// Если в списке строк сортировок есть колонки, которых нет в маппинге, то вернется ошибка.
+// ParseSort builds Orderings from a list of strings in the format
+// "column asc|desc". Column aliases are resolved via ColumnMapping.
+// Returns an error if an alias is not found in the mapping.
 func ParseSort(stringsOrderings []string, columnMapping ColumnMapping) (Orderings, error) {
 	ret := make([]OrderBy, 0, len(stringsOrderings))
 	aliases := lo.Keys(columnMapping)

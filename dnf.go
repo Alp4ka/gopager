@@ -18,31 +18,31 @@ type (
 
 	tDisjunct []tConjunct
 
-	// tDNF - представляет дизъюнктивную нормальную форму логического выражения.
-	// К каждому дизъюнкту применяется операция логического ИЛИ. При этом каждый дизъюнкт состоит
-	// из списка конъюнктов, к каждому из которых применяется логическая операция И. В
-	// роли конъюнкта выступает значение выражения Operator(Column, Value).
+	// tDNF represents the disjunctive normal form (DNF) of a logical expression.
+	// Each disjunct is joined by OR, and each disjunct consists of a list of
+	// conjuncts which are joined by AND. A conjunct is the value of
+	// Operator(Column, Value).
 	//
-	// Так,
+	// Thus:
 	//
-	//	ДНФ = X1 ИЛИ X2 ... ИЛИ Xn, при Xi = Ai1 И Ai2 ... И Aim.
-	//	ДНФ = (A11 И A12 И A13) ИЛИ (A21 И A22 И A23), при n=2, m=3.
+	//	DNF = X1 OR X2 ... OR Xn, where Xi = Ai1 AND Ai2 ... AND Aim.
+	//	DNF = (A11 AND A12 AND A13) OR (A21 AND A22 AND A23), for n=2, m=3.
 	//
-	// 	Где (A11 И A12 И A13), (A21 И A22 И A23) - дизъюнкты.
-	// 	A11, A12, A13, A21, A22, A23 - конъюнкты.
+	//  Where (A11 AND A12 AND A13), (A21 AND A22 AND A23) are disjuncts and
+	//  A11, A12, A13, A21, A22, A23 are conjuncts.
 	tDNF []tDisjunct
 )
 
-// toGORMExpression переводит конъюнкт вида Operator(Column, Value) в SQL условие
-// вида "Column Operator Value". Необходимо для совместимости с gorm.
+// toGORMExpression converts a conjunct of the form Operator(Column, Value)
+// into an SQL condition "Column Operator Value" represented as a clause.Expression.
 //
-// IMPORTANT: Метод использует SQL placeholder "?".
+// IMPORTANT: The method uses the SQL placeholder "?".
 //
-// Например:
+// Example:
 //
 //	tConjunct = { Column: "id", Operator: ">", Value: "123"}
 //
-// Результат:
+// Result:
 //
 //	"id > 123"
 func (c tConjunct) toGORMExpression() clause.Expression {
@@ -54,15 +54,15 @@ func (c tConjunct) toGORMExpression() clause.Expression {
 	}
 }
 
-// toSQLClause переводит конъюнкт вида Operator(Column, Value) в SQL условие
-// вида "Column Operator ?" с соответствующим значением. Возвращает SQL строку
-// и значение для подстановки в placeholder.
+// toSQLClause converts a conjunct of the form Operator(Column, Value) to
+// an SQL condition of the form "Column Operator ?" with a corresponding value.
+// Returns the SQL string and the value for the placeholder.
 //
-// Например:
+// Example:
 //
 //	tConjunct = { Column: "id", Operator: ">", Value: 123}
 //
-// Результат:
+// Result:
 //
 //	("id > ?", 123)
 func (c tConjunct) toSQLClause() (string, driver.Value) {
@@ -70,7 +70,8 @@ func (c tConjunct) toSQLClause() (string, driver.Value) {
 }
 
 func parseAnyValue(v any) any {
-	// Парсит значение в Time. Если получается, возвращает Time, если нет - то же значение, что было передано.
+	// Try parsing a value as time.Time. If it succeeds, return time.Time.
+	// Otherwise return the original value.
 	fnParseBytesToTimeOrValue := func(vBytes []byte) any {
 		dst := time.Time{}
 		err := dst.UnmarshalText(vBytes)
@@ -91,9 +92,8 @@ func parseAnyValue(v any) any {
 	}
 }
 
-// toGORMExpression переводит дизъюнкт вида (K1, K2, K3) в SQL условие
-// вида "K1 AND K2 AND K3". При этом раскрывает каждый Кi (конъюнкт), используя
-// tConjunct.toGORMExpression. Необходимо для совместимости с gorm.
+// toGORMExpression converts a disjunct (K1, K2, K3) into a gorm expression
+// "K1 AND K2 AND K3" where each Ki is expanded via tConjunct.toGORMExpression.
 func (d tDisjunct) toGORMExpression() clause.Expression {
 	andExpressions := make([]clause.Expression, 0, len(d))
 	for _, conjunct := range d {
@@ -109,18 +109,18 @@ func (d tDisjunct) toGORMExpression() clause.Expression {
 	return nil
 }
 
-// toSQLClause переводит дизъюнкт вида (K1, K2, K3) в SQL условие
-// вида "(K1 AND K2 AND K3)" с соответствующими значениями. Возвращает SQL строку
-// и массив значений для подстановки в placeholders.
+// toSQLClause converts a disjunct (K1, K2, K3) into an SQL condition
+// "(K1 AND K2 AND K3)" with corresponding values. Returns the SQL string and
+// the list of values for placeholders.
 //
-// Например:
+// Example:
 //
 //	tDisjunct = {
 //		{Column: "id", Operator: ">", Value: 5},
 //		{Column: "name", Operator: "<", Value: "abc"}
 //	}
 //
-// Результат:
+// Result:
 //
 //	("(id > ? AND name < ?)", [5, "abc"])
 func (d tDisjunct) toSQLClause() (string, []driver.Value) {
@@ -140,9 +140,8 @@ func (d tDisjunct) toSQLClause() (string, []driver.Value) {
 	return "", nil
 }
 
-// toGORMExpression переводит логическую запись ДНФ(tDNF) в clause.Expression.
-// Для каждого дизъюнкта вызывается tDisjunct.toGORMExpression. Дизъюнкты объединяются через логическое ИЛИ.
-// Необходимо для совместимости с gorm.
+// toGORMExpression converts a DNF (tDNF) into a clause.Expression.
+// For each disjunct it calls tDisjunct.toGORMExpression and joins disjuncts with OR.
 func (d tDNF) toGORMExpression() clause.Expression {
 	orExpressions := make([]clause.Expression, 0, len(d))
 
@@ -164,19 +163,18 @@ func (d tDNF) toGORMExpression() clause.Expression {
 	return nil
 }
 
-// toSQLClause переводит логическую запись ДНФ(tDNF) в SQL условие.
-// Для каждого дизъюнкта вызывается tDisjunct.toSQLClause. Дизъюнкты объединяются
-// через логическое ИЛИ. Возвращает SQL строку и массив значений для подстановки
-// в placeholders.
+// toSQLClause converts a DNF (tDNF) into an SQL condition. For each disjunct it
+// calls tDisjunct.toSQLClause and joins disjuncts with OR. Returns the SQL
+// string and the list of values for placeholders.
 //
-// Например:
+// Example:
 //
 //	tDNF = {
-//		{{Column: "id", Operator: "<", Value: 10}}
+//		{{Column: "id", Operator: "<", Value: 10}},
 //		{{Column: "id", Operator: "=", Value: 10}, {Column: "name", Operator: "<", Value: "abc"}},
 //	}
 //
-// Результат:
+// Result:
 //
 //	("((id < ?) OR (id = ? AND name < ?))", [10, 10, "abc"])
 func (d tDNF) toSQLClause() (string, []driver.Value) {

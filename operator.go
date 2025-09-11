@@ -2,8 +2,8 @@ package gopager
 
 import "fmt"
 
-// Operator определяет оператор сравнения для фильтрации по колонке.
-// Используется в условиях фильтрации при пагинации.
+// Operator defines a comparison operator for filtering by column.
+// Used in pagination filtering conditions.
 type Operator string
 
 func (o Operator) Valid() bool {
@@ -25,7 +25,7 @@ const (
 	OperatorGT Operator = ">"
 	OperatorLT Operator = "<"
 
-	// operatorEq - это оператор равенства. Приватность обусловлена тем,
-	// что мы используем оператор ТОЛЬКО при построении условия фильтрации.
+	// operatorEq is the equality operator. It is private because we use it
+	// ONLY while building filtering conditions.
 	operatorEq Operator = "="
 )

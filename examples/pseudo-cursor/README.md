@@ -46,3 +46,4 @@ go run main.go
 | Use Case | Page-based navigation | Cursor-based navigation |
 | Implementation | OFFSET/LIMIT | Complex WHERE conditions |
 | Consistency | May have issues with concurrent inserts | Consistent results |
+

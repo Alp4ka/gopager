@@ -7,11 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// PseudoCursor - псевдо-курсор применяется тогда, когда интерфейс метода подразумевает курсорную пагинацию,
-// но возможно использовать только пагинацию на основе LIMIT/OFFSET.
+// PseudoCursor is used when an API requires cursor-based pagination but only
+// LIMIT/OFFSET pagination is available.
 //
-// PseudoCursor имплементирует Cursor и позволяет генерировать токен на основе последнего значения сдвига относительно
-// начала датасета.
+// It implements Cursor and generates a token based on the last offset within
+// the dataset.
 type PseudoCursor struct {
 	offset int
 }
@@ -22,7 +22,7 @@ func NewPseudoCursor(offset int) *PseudoCursor {
 	}
 }
 
-// DecodePseudoCursor производит попытку распарсить закодированную (base64) строку в *PseudoCursor.
+// DecodePseudoCursor attempts to parse a base64-encoded string into *PseudoCursor.
 func DecodePseudoCursor(b64String string) (*PseudoCursor, error) {
 	if len(b64String) == 0 {
 		return nil, nil
@@ -43,9 +43,9 @@ func DecodePseudoCursor(b64String string) (*PseudoCursor, error) {
 	}, nil
 }
 
-// ToSQL - implements Cursor. Вернет строковое представление числового значения сдвига(offset).
+// ToSQL - implements Cursor. Returns the string form of the numeric offset value.
 //
-// Использование:
+// Usage:
 //
 //	query := fmt.Sprintf("SELECT * FROM table OFFSET %s", p.ToSQL())
 func (p *PseudoCursor) ToSQL() string {
@@ -66,12 +66,12 @@ func (p *PseudoCursor) IsEmpty() bool {
 	return p == nil || p.offset == 0
 }
 
-// Apply - implements Cursor. Применяет сдвиг к запросу gorm.
+// Apply - implements Cursor. Applies the offset to a gorm query.
 func (p *PseudoCursor) Apply(db *gorm.DB) *gorm.DB {
 	return db.Offset(p.GetOffset())
 }
 
-// GetOffset получить численное значение сдвига(offset).
+// GetOffset returns the numeric offset value.
 func (p *PseudoCursor) GetOffset() int {
 	if p != nil {
 		return p.offset
@@ -80,7 +80,7 @@ func (p *PseudoCursor) GetOffset() int {
 	return 0
 }
 
-// WithOffset получить численное значение сдвига(offset).
+// WithOffset sets the numeric offset value and returns the cursor.
 func (p *PseudoCursor) WithOffset(offset int) *PseudoCursor {
 	if p == nil {
 		p = new(PseudoCursor)
@@ -101,7 +101,7 @@ var (
 	_ fmt.Stringer = (*PseudoCursor)(nil)
 )
 
-// NextPagePseudoCursor - получить псевдо-курсор для следующей страницы датасета.
+// NextPagePseudoCursor builds a pseudo-cursor for the next page of the dataset.
 func NextPagePseudoCursor[T any](
 	initialPager *CursorPager[*PseudoCursor],
 	resultSet []T,

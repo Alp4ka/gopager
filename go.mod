@@ -1,6 +1,8 @@
 module github.com/Alp4ka/gopager
 
-go 1.24
+go 1.23
+
+toolchain go1.24.4
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
