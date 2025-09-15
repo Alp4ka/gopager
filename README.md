@@ -3,7 +3,7 @@ A cursor-based pagination library for Go applications using GORM.
 GoPager provides efficient pagination for large datasets without the performance issues of traditional offset-based pagination.
 
 [![tag](https://img.shields.io/github/tag/Alp4ka/gopager.svg)](https://github.com/Alp4ka/gopager/releases)
-![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.24-%23007d9c)
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.23-%23007d9c)
 ![Build Status](https://github.com/Alp4ka/gopager/actions/workflows/test.yml/badge.svg)
 [![Go report](https://goreportcard.com/badge/github.com/Alp4ka/gopager)](https://goreportcard.com/report/github.com/Alp4ka/gopager)
 [![Coverage](https://img.shields.io/codecov/c/github/Alp4ka/gopager)](https://codecov.io/gh/Alp4ka/gopager)
