@@ -1,11 +1,11 @@
-module http-api-example
+module basic-example
 
 go 1.24
 
 require (
-	github.com/Alp4ka/gopager v0.0.0
+	github.com/Alp4ka/gopager v0.0.2
 	gorm.io/driver/sqlite v1.6.0
-	gorm.io/gorm v1.30.0
+	gorm.io/gorm v1.31.0
 )
 
 require (
@@ -15,5 +15,3 @@ require (
 	github.com/samber/lo v1.51.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 )
-
-replace github.com/Alp4ka/gopager => ../../
