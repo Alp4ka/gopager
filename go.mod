@@ -1,13 +1,11 @@
 module github.com/Alp4ka/gopager
 
-go 1.23
-
-toolchain go1.24.4
+go 1.23.0
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/samber/lo v1.51.0
-	github.com/stretchr/testify v1.11.1
+	github.com/samber/lo v1.50.0
+	github.com/stretchr/testify v1.10.0
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/driver/postgres v1.4.7
 	gorm.io/gorm v1.25.5
